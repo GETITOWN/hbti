@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -103,6 +103,15 @@
   .quote-rule{ width:52px; height:4px; background:var(--green); border-radius:4px; margin:0 auto 40px; }
 
   footer{ text-align:center; margin-top:20px; font-size:11px; color:var(--text-dim); }
+
+  /* 영상 화면 */
+  #screen-video{ text-align:center; }
+  .video-wrap{
+    background:#000; border-radius:20px; overflow:hidden;
+    box-shadow:0 8px 0 var(--navy-dark);
+  }
+  .video-wrap video{ width:100%; display:block; }
+  .video-hint{ margin-top:16px; font-size:12.5px; color:var(--text-dim); }
 </style>
 </head>
 <body>
@@ -124,6 +133,14 @@
     <span class="q-badge" id="q-badge">Q1</span>
     <div class="q-text" id="q-text"></div>
     <div class="options" id="options"></div>
+  </div>
+
+  <!-- 영상 재생 화면 -->
+  <div class="screen" id="screen-video">
+    <div class="video-wrap">
+      <video id="video-player" playsinline webkit-playsinline></video>
+    </div>
+    <div class="video-hint">영상이 끝나면 자동으로 이어집니다</div>
   </div>
 
   <!-- 명언 + CTA -->
@@ -205,10 +222,40 @@ function renderQuestion(){
   });
 }
 
+// 문항별로 재생할 영상 파일명 (index.html과 같은 폴더에 있어야 함)
+const questionVideos = ['video1.mp4', 'video2.mp4'];
+
 // 답변 내용과 무관하게 항상 같은 다음 단계로 진행
 function answer(){
+  playVideoFor(current);
+}
+
+function playVideoFor(questionIndex){
+  const src = questionVideos[questionIndex];
+  const player = document.getElementById('video-player');
+
+  showScreen('screen-video');
+  player.src = src;
+  player.load();
+
+  // 영상이 끝나면 다음 단계로 진행 (한 번만 실행되도록 처리)
+  player.onended = proceedAfterVideo;
+  player.onerror = proceedAfterVideo; // 영상 파일을 못 찾으면 그냥 다음으로 넘어감
+
+  // 자동재생 시도 (소리 포함) → 브라우저가 막으면 음소거 후 재생
+  const playPromise = player.play();
+  if (playPromise !== undefined){
+    playPromise.catch(()=>{
+      player.muted = true;
+      player.play();
+    });
+  }
+}
+
+function proceedAfterVideo(){
   current++;
   if(current < questions.length){
+    showScreen('screen-quiz');
     renderQuestion();
   } else {
     showScreen('screen-quote');
@@ -218,3 +265,4 @@ function answer(){
 
 </body>
 </html>
+
